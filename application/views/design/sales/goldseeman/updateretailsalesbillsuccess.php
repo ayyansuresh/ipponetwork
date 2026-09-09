@@ -1,0 +1,54 @@
+<?php
+//$gstType = $_GET['gstType'];
+$company = $_SESSION['beebooklogincompanyid'];
+$accountyear = $_SESSION['beebookloginaccountyearid'];
+$billType = 1;
+?>
+<div class="modal-content">
+    <div class="row">
+        <div class="col s12 m12 l12">
+            <div class="card-panel">
+                <h4 class="header2">SUCCESS (BILL NUMBER -
+                    <?php echo $salesBillNumber = "<script>var billnumber=$('#billNumber').val() ;$('#billnumberfinal').val(billnumber)</script>";
+                    ?>
+                    )
+                    <input id="billnumberfinal" readonly></span>
+                </h4>
+            </div>
+
+            
+        </div>
+    </div>
+</div>
+<div class="modal-footer green lighten-4">
+    <button  class="waves-effect waves-red btn-flat" onclick="printretail('printpage', '<?php echo $company; ?>', '<?php echo $accountyear; ?>');">Print</button>
+    <!--<button  class="waves-effect waves-red btn-flat modal-action" onclick="print('printpage','<?php echo generalhelper::getGetElement('billGSTType') ?>','<?php echo $billType; ?>');">Print</button>-->
+    <button  class="waves-effect waves-red btn-flat modal-action" onclick="closeRetailSalesModal();">Close</button>
+</div>
+<!--<script>
+
+    function print(printpage,gstType, billType)
+    {
+        var billType = 1;
+        var billnumber = $('#billnumberfinal').val();
+        var completeurl = url + 'sales-salesmalleswara/generateInvoicePdf?frombillnumber=' + billnumber +
+            '&tobillnumber=' + billnumber + '&gstType=' + gstType + '&billType=' + billType;
+        window.open(completeurl);
+    }
+</script>-->
+<script>
+
+    function printretail(printpage, company, accountYear)
+    {
+        //var billType = 1;
+        //var billnumber = $('#billnumberfinal').val();
+        var gstType = 3;
+        var billType = 3;
+        var billnumber = $('#billnumberfinal').val();
+        completeurl = url + "sales-sales/printPdf";
+        var data = ' &company=' + company + '&accountYear=' + accountYear + '&frombillnumber=' + billnumber + '&tobillnumber=' + billnumber + '&gstType=' + gstType + '&billType=' + billType;
+        ajaxloadwithresponsesnonjson('get', completeurl, data);
+
+    }
+    
+</script>

@@ -1,0 +1,9 @@
+<?php
+define('gdcItems_id','gdcItemid');
+define('gdcItems_gdcRefId','gdcRefId');
+define('gdcItems_itemId','itemId');
+define('gdcItems_uomId','uomId');
+define('gdcItems_takenQuantity','takenQuantity');
+define('gdcItems_returnQuantity','returnQuantity');
+define('gdcItems_salesQuantity','salesQuantity');
+define('gdcItems_createdTimeStamp','createdTimeStamp');

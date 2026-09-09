@@ -1,0 +1,9 @@
+<?php
+define('gdc_out_id','gdcOutId');
+define('gdc_out_date','gdcOutDate');
+define('gdc_out_companyname','companyName');
+define('gdc_out_issuedperson','issuedPerson');
+define('gdc_out_deliveryperson','deliveryPerson');
+define('gdc_out_contactnumber','contactNumber');
+define('gdc_out_status','status');
+define('gdc_out_createdtimetamp','createdTimeStamp');

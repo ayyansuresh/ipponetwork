@@ -1,0 +1,4 @@
+1) Create new table invoicerawtable
+2) salebillprefix table add new field for type - ex - EVENTS
+3) salesbill table add new field for type - ex-EVENTS
+4) new type add pana porom apdina -> Product table la add pananum , salesbillprefix table la add pananum

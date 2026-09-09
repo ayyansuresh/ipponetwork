@@ -1,0 +1,31 @@
+<?php
+
+define('salesbillitemgoldpurchaseestimate_id', 'ID');
+define('salesbillitemgoldpurchaseestimate_sales_bill_ref_id', 'salesBillRefId');
+define('salesbillitemgoldpurchaseestimate_item_ref_id', 'itemRefId');
+define('salesbillitemgoldpurchaseestimate_unit_rate', 'unitrate');
+define('salesbillitemgoldpurchaseestimate_gross_weight', 'grossWeight');
+define('salesbillitemgoldpurchaseestimate_net_weight', 'Quantity');
+define('salesbillitemgoldpurchaseestimate_total', 'total');
+define('salesbillitemgoldpurchaseestimate_taxamount', 'taxamount');
+define('salesbillitemgoldpurchaseestimate_Price', 'Price');
+define('salesbillitemgoldpurchaseestimate_taxable_value', 'taxableValue');
+define('salesbillitemgoldpurchaseestimate_cgst_rate', 'cgstRate');
+define('salesbillitemgoldpurchaseestimate_cgst_total', 'cgstTotal');
+define('salesbillitemgoldpurchaseestimate_sgst_rate', 'sgstRate');
+define('salesbillitemgoldpurchaseestimate_sgst_total', 'sgstTotal');
+define('salesbillitemgoldpurchaseestimate_igst_rate', 'igstRate');
+define('salesbillitemgoldpurchaseestimate_igst_total', 'igstTotal');
+define('salesbillitemgoldpurchaseestimate_UOM_ref_id', 'UOMRefId');
+define('salesbillitemgoldpurchaseestimate_total_UOM_quantity', 'totalUOMQuantity');
+define('salesbillitemgoldpurchaseestimate_sales_bill_date', 'salesBillDate');
+define('salesbillitemgoldpurchaseestimate_hsn_code_ref_id', 'hsnCodeRefId');
+define('salesbillitemgoldpurchaseestimate_sales_customer_ref_id', 'salesCustomerRefId');
+define('salesbillitemgoldpurchaseestimate_company_ref_id', 'companyRefId');
+define('salesbillitemgoldpurchaseestimate_account_year_ref_id', 'accountYearRefId');
+define('salesbillitemgoldpurchaseestimate_sales_bill_type', 'salesBillType');
+define('salesbillitemgoldpurchaseestimate_sales_bill_gst_type', 'salesBillGSTType');
+define('salesbillitemgoldpurchaseestimate_commodity_ref_id', 'commodityRefId');
+define('salesbillitemgoldpurchaseestimate_unitrate_wittax', 'unitRateWithTax');
+define('salesbillitemgoldpurchaseestimate_total_withtax', 'totalWithTax');
+define('salesbillitemgoldpurchaseestimate_vad', 'vad');

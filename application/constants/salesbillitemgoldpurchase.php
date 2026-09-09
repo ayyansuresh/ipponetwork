@@ -1,0 +1,31 @@
+<?php
+
+define('salesbillitemgoldpurchase_id', 'ID');
+define('salesbillitemgoldpurchase_sales_bill_ref_id', 'salesBillRefId');
+define('salesbillitemgoldpurchase_item_ref_id', 'itemRefId');
+define('salesbillitemgoldpurchase_unit_rate', 'unitrate');
+define('salesbillitemgoldpurchase_gross_weight', 'grossWeight');
+define('salesbillitemgoldpurchase_net_weight', 'Quantity');
+define('salesbillitemgoldpurchase_total', 'total');
+define('salesbillitemgoldpurchase_taxamount', 'taxamount');
+define('salesbillitemgoldpurchase_Price', 'Price');
+define('salesbillitemgoldpurchase_taxable_value', 'taxableValue');
+define('salesbillitemgoldpurchase_cgst_rate', 'cgstRate');
+define('salesbillitemgoldpurchase_cgst_total', 'cgstTotal');
+define('salesbillitemgoldpurchase_sgst_rate', 'sgstRate');
+define('salesbillitemgoldpurchase_sgst_total', 'sgstTotal');
+define('salesbillitemgoldpurchase_igst_rate', 'igstRate');
+define('salesbillitemgoldpurchase_igst_total', 'igstTotal');
+define('salesbillitemgoldpurchase_UOM_ref_id', 'UOMRefId');
+define('salesbillitemgoldpurchase_total_UOM_quantity', 'totalUOMQuantity');
+define('salesbillitemgoldpurchase_sales_bill_date', 'salesBillDate');
+define('salesbillitemgoldpurchase_hsn_code_ref_id', 'hsnCodeRefId');
+define('salesbillitemgoldpurchase_sales_customer_ref_id', 'salesCustomerRefId');
+define('salesbillitemgoldpurchase_company_ref_id', 'companyRefId');
+define('salesbillitemgoldpurchase_account_year_ref_id', 'accountYearRefId');
+define('salesbillitemgoldpurchase_sales_bill_type', 'salesBillType');
+define('salesbillitemgoldpurchase_sales_bill_gst_type', 'salesBillGSTType');
+define('salesbillitemgoldpurchase_commodity_ref_id', 'commodityRefId');
+define('salesbillitemgoldpurchase_unitrate_wittax', 'unitRateWithTax');
+define('salesbillitemgoldpurchase_total_withtax', 'totalWithTax');
+define('salesbillitemgoldpurchase_vad', 'vad');

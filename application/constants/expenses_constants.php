@@ -1,0 +1,21 @@
+<?php
+define("expenses_account", "expenseId");
+define("expenses_category_ref_id", "expenseCateogryRefId");
+define("expenses_subcategory_ref_id", "expenseSubCateogoryRefId");
+define("expenses_amount", "amount");
+define("expenses_payment_mode", "paymentMode");
+define("expenses_payment_description", "paymentDescription");
+define("expenses_account_ref_id", "accountRefId");
+define("expenses_company_ref_id", "companyRefId");
+define("expenses_account_year_ref_id", "accountYearRefId");
+define("expenses_created_by", "createdBy");
+define("expenses_created_timestamp", "createdTimestamp");
+define("expenses_updated_by", "updatedBy");
+define("expenses_updated_timestamp", "updatedTimestamp");
+define("expenses_expense_date", "expenseDate");
+define("expenses_active_flag", "activeFlag");
+define("expenses_voucher_number", "voucherNumber");
+define("expenses_mobile_number", "mobileNumber");
+define("expenses_transaction_detail_id", "transactionDetailId");
+define("expenses_transaction_table", "transactionTable");
+define("expenses_expenses_id", "expenseId");

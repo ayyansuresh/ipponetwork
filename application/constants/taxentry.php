@@ -1,0 +1,17 @@
+<?php
+define('tax_entry_id','id');
+define('tax_entry_date','date');
+define('tax_entry_sgst','sgstTax');
+define('tax_entry_cgst','cgstTax');
+define('tax_entry_igst','igstTax');
+define('tax_entry_totalTax','totalTax');
+define('tax_entry_description','description');
+define('tax_entry_payment_mode','paymentMode');
+define('tax_entry_check_dd_number','trackingNumber');
+define('tax_entry_created_by','createdBy');
+define('tax_entry_updated_timestamp','updatedTimeStamp');
+define('tax_entry_updated_by','updatedBy');
+define('tax_entry_created_timestamp','createdTimeStamp');
+define('tax_account_ref_id','accountRefId');
+define('tax_company_ref_id','companyRefId');
+define('tax_account_year_id','accountYearRefId');

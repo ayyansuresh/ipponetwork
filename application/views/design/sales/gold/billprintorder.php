@@ -1,0 +1,60 @@
+<?php
+$gstType = $_GET['gstType'];
+$companyId = $_SESSION['beebooklogincompanyid'];
+$accountyear = $_SESSION['beebookloginaccountyearid'];
+?>
+<script type="text/javascript" src="<?php echo URL; ?>assets/js/sales/gold/updateSales.js"></script>
+<div class="container teal lighten-2">
+    <div class="collection">
+        <h4 class="collection-item teal darken-2 center-align" style="color:#fff !important;">Print Order Entry </h4>
+    </div>
+    <div class="card-panel">
+        <h4 class="header2">Order Entry Print</h4>
+        <div class="row">
+            <div class="row">
+                <div class="input-field col s12 m2">
+                    <i class="mdi-action-find-in-page prefix"></i>
+                    <input id="frombillnumber" type="text" required="">
+                    <label for="frombillnumber">From</label>
+                </div>
+                <div class="input-field col s12 m2">
+                    <i class="mdi-action-find-in-page prefix"></i>
+                    <input id="tobillnumber" type="text" required="">
+                    <label for="tobillnumber">To</label>
+                </div>
+                <div class="input-field col s12 m4" style="display:none;">
+                        <label for="billType" class="active">Bill Type</label>
+                        <div class="sel-wrap">
+                            <select id="billType" class="floating-label">
+                                <option value=""  disabled>Select Bill Type</option>
+                                <option value="1" selected>Original & Extra Copy (Laser)</option>
+                                <option value="2" >Transport Copy (Dot Matrix)</option>
+                                <option value="3" >Supplier Copy (Dot Matrix)</option>
+                            </select>
+                            <div class='bar'></div>
+                        </div>
+                </div>
+                <div class="input-field col s12 m4">
+                    <p><a class="waves-effect waves-light btn teal darken-2" href="#!" onclick="print('<?php echo $gstType; ?>','<?php echo $companyId; ?>','<?php echo $accountyear; ?>')"><i class="mdi-action-print left"></i> Print</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="<?php echo URL; ?>assets/js/materialize/plugins.js"></script>
+<script type="text/javascript" src="<?php echo URL; ?>assets/js/customer/updateCustomerDetails.js"></script>
+<link rel="stylesheet" href="<?php echo URL; ?>assets/css/select2/custom.css">
+<script>
+
+    function print(gstType, billType ,company,accountYear)
+    {
+        var billType = 2;
+        var frombillnumber = $('#frombillnumber').val();
+        var tobillnumber = $('#tobillnumber').val();
+        var completeurl = url + 'sales-salesmalleswara/generateOrderGoldInvoicePdf?frombillnumber=' + frombillnumber +
+            '&tobillnumber=' + tobillnumber + '&gstType=' + gstType + '&billType=' + billType + '&company=' + company + '&accountYear=' + accountYear;
+        window.open(completeurl);     
+    }
+    
+ 
+</script>

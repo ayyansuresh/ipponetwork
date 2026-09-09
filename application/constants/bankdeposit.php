@@ -1,0 +1,14 @@
+<?php
+define('bankdeposit_id','depositId');
+define('bankdeposit_date','depositDate');
+define('bankdeposit_mode','depositMode');
+define('bankdeposit_amount','depositAmount');
+define('bankdeposit_company_ref_id','companyRefId');
+define('bankdeposit_accountyear_ref_id','accountYearRefId');
+define('bankdeposit_createdby','createdBy');
+define('bankdeposit_updatedby','updatedBy');
+define('bankdeposit_createdtimestamp','createdTimestamp');
+define('bankdeposit_updatedtimestamp','updatedTimestamp');
+define('bankdeposit_mode_description','modeDescription');
+define('bankdeposit_from_account_ref_id','fromAccountRefId');
+define('bankdeposit_to_account_ref_id','toAccountRefId');

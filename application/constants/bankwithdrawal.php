@@ -1,0 +1,13 @@
+<?php
+define('bankwithdrawal_id','withdrawalId');
+define('bankwithdrawal_date','withdrawalDate');
+define('bankwithdrawal_mode','withdrawalMode');
+define('bankwithdrawal_amount','withdrawalAmount');
+define('bankwithdrawal_company_ref_id','companyRefId');
+define('bankwithdrawal_accountyear_ref_id','accountYearRefId');
+define('bankwithdrawal_createdby','createdBy');
+define('bankwithdrawal_updatedby','updatedBy');
+define('bankwithdrawal_createdtimestamp','createdTimestamp');
+define('bankwithdrawal_updatedtimestamp','updatedTimestamp');
+define('bankwithdrawal_mode_description','modeDescription');
+define('bankwithdrawal_account_ref_id','accountRefId');
