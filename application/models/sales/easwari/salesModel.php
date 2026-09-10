@@ -1871,14 +1871,20 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
         try {
             // Resolve company_id
             $compId = ($companyId > 0) ? (int)$companyId : (int)self::$companyid;
-            if ($compId <= 0 && !empty($data['companyname'])) {
-                $compId = (int)self::getCompanyId($data['companyname']);
+            if ($compId <= 0) {
+                $compName = !empty($data['companyName']) ? $data['companyName'] : (!empty($data['companyname']) ? $data['companyname'] : '');
+                if (!empty($compName)) {
+                    $compId = (int)self::getCompanyId($compName);
+                }
             }
 
             // Resolve account_year_id
             $yearId = ($accountYearId > 0) ? (int)$accountYearId : (int)self::$accountyearid;
-            if ($yearId <= 0 && !empty($data['accountyear'])) {
-                $yearId = (int)self::getAccountYearId($data['accountyear']);
+            if ($yearId <= 0) {
+                $accYear = !empty($data['accountYear']) ? $data['accountYear'] : (!empty($data['accountyear']) ? $data['accountyear'] : '');
+                if (!empty($accYear)) {
+                    $yearId = (int)self::getAccountYearId($accYear);
+                }
             }
 
             $rawId = ($invoiceRawDataId > 0) ? (int)$invoiceRawDataId : NULL;
@@ -1993,22 +1999,24 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
     }
 
     public static function getCompanyAndAccountYearId($data) {
-        if (empty($data['companyname'])) {
-            error_log("getCompanyAndAccountYearId: companyname parameter is missing or empty");
+        $companyName = !empty($data['companyName']) ? $data['companyName'] : (!empty($data['companyname']) ? $data['companyname'] : '');
+        if (empty($companyName)) {
+            error_log("getCompanyAndAccountYearId: companyName parameter is missing or empty");
             return 0;
         }
 
-        $companyId = self::getCompanyId($data['companyname']);
+        $companyId = self::getCompanyId($companyName);
         if ($companyId == 0) {
             return 0;
         }
 
-        if (empty($data['accountyear'])) {
-            error_log("getCompanyAndAccountYearId: accountyear parameter is missing or empty");
+        $accountYear = !empty($data['accountYear']) ? $data['accountYear'] : (!empty($data['accountyear']) ? $data['accountyear'] : '');
+        if (empty($accountYear)) {
+            error_log("getCompanyAndAccountYearId: accountYear parameter is missing or empty");
             return 0;
         }
 
-        $accountYearId = self::getAccountYearId($data['accountyear']);
+        $accountYearId = self::getAccountYearId($accountYear);
         if ($accountYearId == 0) {
             return 0;
         }
@@ -2019,10 +2027,388 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
         );
     }
 
+    public static function normalizeInvoiceData($data) {
+        $norm = array();
+        
+        $norm['date'] = !empty($data['date']) ? trim($data['date']) : date('Y-m-d');
+        
+        // Company Name
+        $norm['companyName'] = !empty($data['companyName']) ? trim($data['companyName']) : (!empty($data['companyname']) ? trim($data['companyname']) : '');
+        
+        // Account Year
+        $norm['accountYear'] = !empty($data['accountYear']) ? trim($data['accountYear']) : (!empty($data['accountyear']) ? trim($data['accountyear']) : '');
+        
+        // Payment Mode
+        $norm['paymentMode'] = !empty($data['paymentMode']) ? strtoupper(trim($data['paymentMode'])) : (!empty($data['paymentmode']) ? strtoupper(trim($data['paymentmode'])) : 'BANK');
+        
+        // Customer Details
+        $mobileNo = '';
+        if (isset($data['customer']) && is_array($data['customer']) && !empty($data['customer']['mobileNo'])) {
+            $mobileNo = trim($data['customer']['mobileNo']);
+        } else if (!empty($data['mobileNo'])) {
+            $mobileNo = trim($data['mobileNo']);
+        } else if (!empty($data['mobile'])) {
+            $mobileNo = trim($data['mobile']);
+        }
+        $norm['mobileNo'] = $mobileNo;
+        
+        $customerName = '';
+        if (isset($data['customer']) && is_array($data['customer']) && !empty($data['customer']['customerName'])) {
+            $customerName = trim($data['customer']['customerName']);
+        } else if (!empty($data['customerName'])) {
+            $customerName = trim($data['customerName']);
+        }
+        $norm['customerName'] = $customerName;
+        
+        // Payment Amount & Razorpay Order ID
+        $amount = 0.0;
+        if (isset($data['payment']) && is_array($data['payment']) && isset($data['payment']['amount'])) {
+            $amount = floatval($data['payment']['amount']);
+        } else if (isset($data['amount'])) {
+            $amount = floatval($data['amount']);
+        }
+        $norm['amount'] = $amount;
+        
+        $razorpayOrderId = '';
+        if (isset($data['payment']) && is_array($data['payment']) && !empty($data['payment']['razorpayOrderId'])) {
+            $razorpayOrderId = trim($data['payment']['razorpayOrderId']);
+        } else if (!empty($data['razorpayOrderId'])) {
+            $razorpayOrderId = trim($data['razorpayOrderId']);
+        }
+        $norm['razorpayOrderId'] = $razorpayOrderId;
+        
+        // Reference (ippoFormResponseId)
+        $ippoFormResponseId = '';
+        if (isset($data['reference']) && is_array($data['reference']) && !empty($data['reference']['ippoFormResponseId'])) {
+            $ippoFormResponseId = trim($data['reference']['ippoFormResponseId']);
+        } else if (!empty($data['ippoFormResponseId'])) {
+            $ippoFormResponseId = trim($data['ippoFormResponseId']);
+        }
+        $norm['ippoFormResponseId'] = $ippoFormResponseId;
+        
+        // Products List
+        $products = array();
+        if (!empty($data['products']) && is_array($data['products'])) {
+            foreach ($data['products'] as $p) {
+                if (empty($p) || !is_array($p)) continue;
+                $type = !empty($p['type']) ? trim($p['type']) : (!empty($p['name']) ? trim($p['name']) : 'EVENTS');
+                $name = !empty($p['name']) ? trim($p['name']) : $type;
+                $qty = isset($p['quantity']) ? floatval($p['quantity']) : 1;
+                if ($qty <= 0) $qty = 1;
+                $unitPrice = isset($p['unitPrice']) ? floatval($p['unitPrice']) : (isset($p['price']) ? floatval($p['price']) : 0.0);
+                $gstPercentage = isset($p['gstPercentage']) ? floatval($p['gstPercentage']) : (isset($p['gstRate']) ? floatval($p['gstRate']) : null);
+                
+                $products[] = array(
+                    'type' => $type,
+                    'name' => $name,
+                    'quantity' => $qty,
+                    'unitPrice' => $unitPrice,
+                    'gstPercentage' => $gstPercentage,
+                    'isInclusive' => false
+                );
+            }
+        } else if (!empty($data['type'])) {
+            // Legacy flat single item format (amount is inclusive of GST)
+            $products[] = array(
+                'type' => trim($data['type']),
+                'name' => trim($data['type']),
+                'quantity' => 1,
+                'unitPrice' => $amount,
+                'gstPercentage' => null,
+                'isInclusive' => true
+            );
+        }
+        $norm['products'] = $products;
+        
+        return $norm;
+    }
+
+    public static function getOrCreateItem($type, $name = '', $commodityRefId = 1) {
+        try {
+            if (empty($type)) {
+                $type = 'EVENTS';
+            }
+
+            // Check existing active item by name or type
+            $sql = "SELECT
+                    p." . items_item_id . " AS productId,
+                    p." . items_commodity_id . " AS commodityRefId
+                FROM " . table_items . " p
+                WHERE (p." . items_name . " = :type OR p." . items_name . " = :name)
+                AND p." . items_active_flag . " = 1
+                LIMIT 1";
+
+            $query = self::$db->prepare($sql);
+            $query->execute(array(
+                ':type' => $type,
+                ':name' => !empty($name) ? $name : $type
+            ));
+
+            $product = $query->fetch(PDO::FETCH_OBJ);
+            if ($product && isset($product->productId)) {
+                return array(
+                    'productId' => (int)$product->productId,
+                    'commodityRefId' => (int)$product->commodityRefId
+                );
+            }
+
+            // Create new item in items table
+            $sqlInsert = "INSERT INTO " . table_items . " (
+                            " . items_name . ",
+                            " . items_description . ",
+                            " . items_commodity_id . ",
+                            " . items_packingFactor . ",
+                            " . items_billFactor . ",
+                            " . items_unitPrice . ",
+                            " . items_unitPriceWholeSale . ",
+                            " . items_company_ref_id . ",
+                            " . items_created_by . ",
+                            " . items_created_timestamp . ",
+                            " . items_active_flag . "
+                        ) VALUES (
+                            :name,
+                            :description,
+                            :commodityRefId,
+                            1,
+                            1,
+                            0,
+                            0,
+                            :companyRefId,
+                            1,
+                            NOW(),
+                            1
+                        )";
+
+            $insertQuery = self::$db->prepare($sqlInsert);
+            $insertQuery->execute(array(
+                ':name' => $type,
+                ':description' => !empty($name) ? $name : $type,
+                ':commodityRefId' => (int)$commodityRefId,
+                ':companyRefId' => (int)self::$companyid
+            ));
+
+            $newProductId = (int)self::$db->lastInsertId();
+
+            return array(
+                'productId' => $newProductId,
+                'commodityRefId' => (int)$commodityRefId
+            );
+        } catch (PDOException $ex) {
+            error_log("getOrCreateItem PDOException: " . $ex->getMessage());
+            return 0;
+        } catch (Exception $ex) {
+            error_log("getOrCreateItem Exception: " . $ex->getMessage());
+            return 0;
+        }
+    }
+
+    public static function getInvoiceProductDetails($normData) {
+        try {
+            if (empty($normData['products']) || !is_array($normData['products'])) {
+                error_log("getInvoiceProductDetails: No products provided in request");
+                return 0;
+            }
+
+            $processedItems = array();
+            $totalTaxable = 0.0;
+            $totalCgst = 0.0;
+            $totalSgst = 0.0;
+            $totalIgst = 0.0;
+            $calculatedBillTotal = 0.0;
+            $typesList = array();
+
+            foreach ($normData['products'] as $p) {
+                $type = $p['type'];
+                $name = $p['name'];
+                $quantity = $p['quantity'];
+                $unitPrice = $p['unitPrice'];
+                $gstPercentage = $p['gstPercentage'];
+                $isInclusive = !empty($p['isInclusive']);
+
+                $typesList[] = $type;
+
+                // 1. Get or create item in table_items
+                $itemInfo = self::getOrCreateItem($type, $name, 1);
+                if ($itemInfo == 0 || !is_array($itemInfo)) {
+                    error_log("getInvoiceProductDetails: Failed to get/create item for type '" . $type . "'");
+                    return 0;
+                }
+                $productId = $itemInfo['productId'];
+                $commodityRefId = $itemInfo['commodityRefId'];
+
+                // 2. Get Commodity HSN Reference
+                $sqlComm = "SELECT " . commodity_HSNcode_ref . " AS commodityHSNCodeRef
+                            FROM " . table_commodity . "
+                            WHERE " . commodity_id . " = :commodityRefId
+                            LIMIT 1";
+                $queryComm = self::$db->prepare($sqlComm);
+                $queryComm->execute(array(':commodityRefId' => $commodityRefId));
+                $commodity = $queryComm->fetch(PDO::FETCH_OBJ);
+                $commodityHSNCodeRef = ($commodity && !empty($commodity->commodityHSNCodeRef)) ? $commodity->commodityHSNCodeRef : '998339';
+
+                // 3. Determine GST Rates
+                if ($gstPercentage !== null && $gstPercentage >= 0) {
+                    $cgstRate = round($gstPercentage / 2, 2);
+                    $sgstRate = round($gstPercentage / 2, 2);
+                    $igstRate = 0.0;
+                } else {
+                    $sqlGst = "SELECT " . gsthsncode_cgst_rate . " AS cgstRate,
+                                      " . gsthsncode_sgst_rate . " AS sgstRate,
+                                      " . gsthsncode_igst_rate . " AS igstRate
+                               FROM " . table_gst_HSNCode . "
+                               WHERE " . gsthsncode_hsn_code . " = :commodityHSNCodeRef
+                               LIMIT 1";
+                    $queryGst = self::$db->prepare($sqlGst);
+                    $queryGst->execute(array(':commodityHSNCodeRef' => $commodityHSNCodeRef));
+                    $gstHsn = $queryGst->fetch(PDO::FETCH_OBJ);
+                    if ($gstHsn) {
+                        $cgstRate = floatval($gstHsn->cgstRate);
+                        $sgstRate = floatval($gstHsn->sgstRate);
+                        $igstRate = floatval($gstHsn->igstRate);
+                    } else {
+                        $cgstRate = 9.0;
+                        $sgstRate = 9.0;
+                        $igstRate = 0.0;
+                    }
+                }
+
+                $totalGstRate = $cgstRate + $sgstRate + $igstRate;
+
+                // 4. Calculate item amounts
+                if ($isInclusive) {
+                    // Legacy mode: unitPrice is total inclusive amount
+                    $lineTotalWithTax = round($unitPrice, 2);
+                    if ($totalGstRate > 0) {
+                        $lineTaxable = round($lineTotalWithTax / (1 + ($totalGstRate / 100)), 2);
+                    } else {
+                        $lineTaxable = $lineTotalWithTax;
+                    }
+                    $cgstAmount = round($lineTaxable * ($cgstRate / 100), 2);
+                    $sgstAmount = round($lineTaxable * ($sgstRate / 100), 2);
+                    $igstAmount = round($lineTaxable * ($igstRate / 100), 2);
+                    $itemUnitPrice = $lineTaxable;
+                    $unitRateWithTax = $lineTotalWithTax;
+                } else {
+                    // Modern multi-item mode: unitPrice is base price per unit
+                    $itemUnitPrice = round($unitPrice, 2);
+                    $lineTaxable = round($itemUnitPrice * $quantity, 2);
+                    $cgstAmount = round($lineTaxable * ($cgstRate / 100), 2);
+                    $sgstAmount = round($lineTaxable * ($sgstRate / 100), 2);
+                    $igstAmount = round($lineTaxable * ($igstRate / 100), 2);
+                    $lineTotalWithTax = round($lineTaxable + $cgstAmount + $sgstAmount + $igstAmount, 2);
+                    $unitRateWithTax = round($lineTotalWithTax / $quantity, 2);
+                }
+
+                $totalTaxable += $lineTaxable;
+                $totalCgst += $cgstAmount;
+                $totalSgst += $sgstAmount;
+                $totalIgst += $igstAmount;
+                $calculatedBillTotal += $lineTotalWithTax;
+
+                $processedItems[] = array(
+                    'productId' => $productId,
+                    'type' => $type,
+                    'name' => $name,
+                    'commodityRefId' => $commodityRefId,
+                    'commodityHSNCodeRef' => $commodityHSNCodeRef,
+                    'quantity' => $quantity,
+                    'unitPrice' => $itemUnitPrice,
+                    'taxableValue' => $lineTaxable,
+                    'cgstRate' => $cgstRate,
+                    'cgstTotal' => $cgstAmount,
+                    'sgstRate' => $sgstRate,
+                    'sgstTotal' => $sgstAmount,
+                    'igstRate' => $igstRate,
+                    'igstTotal' => $igstAmount,
+                    'totalWithTax' => $lineTotalWithTax,
+                    'unitRateWithTax' => $unitRateWithTax
+                );
+            }
+
+            $primaryType = !empty($typesList) ? $typesList[0] : 'EVENTS';
+            $combinedType = implode(', ', array_unique($typesList));
+
+            // 5. Get Sales Bill Prefix (look for type-specific prefix, or fallback to any for company/year)
+            $sqlPrefix = "SELECT " . sales_prefix_value . " AS salesBillPrefixValue
+                          FROM " . table_sales_bill_prefix . "
+                          WHERE " . sales_prefix_company_id . " = :companyRefId
+                          AND " . sales_prefix_account_id . " = :accountyearRefId
+                          ORDER BY (" . salesbillprefixvalue_type . " = :type) DESC
+                          LIMIT 1";
+            $queryPrefix = self::$db->prepare($sqlPrefix);
+            $queryPrefix->execute(array(
+                ':companyRefId' => self::$companyid,
+                ':accountyearRefId' => self::$accountyearid,
+                ':type' => $primaryType
+            ));
+            $prefix = $queryPrefix->fetch(PDO::FETCH_OBJ);
+            if ($prefix && !empty($prefix->salesBillPrefixValue)) {
+                $salesBillPrefixValue = $prefix->salesBillPrefixValue;
+            } else {
+                // Generate dynamic fallback prefix based on account year (e.g. 2027-2028 -> 27-28/)
+                $yr = !empty($normData['accountYear']) ? $normData['accountYear'] : '2026-2027';
+                if (preg_match('/(\d{2})(\d{2})-(\d{2})(\d{2})/', $yr, $m)) {
+                    $salesBillPrefixValue = $m[2] . '-' . $m[4] . '/';
+                } else {
+                    $salesBillPrefixValue = '27-28/';
+                }
+            }
+
+            // 6. Get Last Bill Number
+            $sqlCount = "SELECT MAX(" . salesbill_sales_bill_number . ") AS billCount
+                         FROM " . table_sales_bill . "
+                         WHERE " . salesbill_company_ref_id . " = :companyRefId
+                         AND " . salesbill_account_year_ref_id . " = :accountYearId";
+            $queryCount = self::$db->prepare($sqlCount);
+            $queryCount->execute(array(
+                ':companyRefId' => self::$companyid,
+                ':accountYearId' => self::$accountyearid
+            ));
+            $billCount = $queryCount->fetch(PDO::FETCH_OBJ);
+            $lastBillNumber = ($billCount && $billCount->billCount) ? intval($billCount->billCount) : 0;
+            $salesBillNumber = $lastBillNumber + 1;
+            $salesBillDisplayNumber = $salesBillPrefixValue . $salesBillNumber;
+
+            // 7. Total amount & Round Off
+            $rawTotal = $totalTaxable + $totalCgst + $totalSgst + $totalIgst;
+            if ($normData['amount'] > 0) {
+                $salesBillTotal = round($normData['amount'], 2);
+                $roundOff = round($salesBillTotal - $rawTotal, 2);
+            } else {
+                // Payment amount not received: calculate sales total rounded to nearest whole rupee
+                $salesBillTotal = round($rawTotal);
+                $roundOff = round($salesBillTotal - $rawTotal, 2);
+            }
+
+            return array(
+                'items' => $processedItems,
+                'primaryType' => $primaryType,
+                'combinedType' => $combinedType,
+                'salesBillPrefixValue' => $salesBillPrefixValue,
+                'salesBillNumber' => $salesBillNumber,
+                'salesBillDisplayNumber' => $salesBillDisplayNumber,
+                'runningTotal' => round($totalTaxable, 2),
+                'cgstTotal' => round($totalCgst, 2),
+                'sgstTotal' => round($totalSgst, 2),
+                'igstTotal' => round($totalIgst, 2),
+                'roundOff' => $roundOff,
+                'salesBillTotal' => round($salesBillTotal, 2)
+            );
+        } catch (PDOException $ex) {
+            error_log("getInvoiceProductDetails PDOException: " . $ex->getMessage());
+            return 0;
+        } catch (Exception $ex) {
+            error_log("getInvoiceProductDetails Exception: " . $ex->getMessage());
+            return 0;
+        }
+    }
+
     public static function addSaveDayTransaction($data, $invoiceProductDetails) {
         $commit = 1;
         try {
-            $description = $data['type'] . " - Invoice No : " . $invoiceProductDetails['salesBillDisplayNumber'];
+            $description = $invoiceProductDetails['combinedType'] . " - Invoice No : " . $invoiceProductDetails['salesBillDisplayNumber'];
+            $amount = $invoiceProductDetails['salesBillTotal'];
+            $billDate = !empty($data['date']) ? $data['date'] : date('Y-m-d');
 
             $sql = "INSERT INTO " . table_day_transaction . " (
                     " . daytransaction_date . ",
@@ -2059,13 +2445,13 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
             $query = self::$db->prepare($sql);
 
             $parameter = array(
-                ':' . daytransaction_date => !empty($data['date']) ? $data['date'] : date('Y-m-d'),
+                ':' . daytransaction_date => $billDate,
                 ':' . daytransaction_transaction_table => salesbilltable_reference_value,
                 ':' . daytransaction_transaction_type => 1,
                 ':' . daytransaction_transaction_detail_id => self::$salesBillId,
                 ':' . daytransaction_transaction_description => $description,
                 ':' . daytransaction_active_flag => 1,
-                ':' . daytransaction_amount => $data['amount'],
+                ':' . daytransaction_amount => $amount,
                 ':' . daytransaction_customer_id => self::$customerId,
                 ':' . daytransaction_account_year_ref_id => self::$accountyearid,
                 ':' . daytransaction_company_ref_id => self::$companyid,
@@ -2088,7 +2474,7 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
     public static function addSaveAccountTransaction($data, $invoiceProductDetails) {
         $commit = 1;
         try {
-            $paymentMode = isset($data['paymentmode']) ? strtoupper(trim($data['paymentmode'])) : '';
+            $paymentMode = !empty($data['paymentMode']) ? strtoupper(trim($data['paymentMode'])) : (!empty($data['paymentmode']) ? strtoupper(trim($data['paymentmode'])) : '');
             if ($paymentMode == "CASH") {
                 $transactionmode = 1;
                 $accountrefid = 1;
@@ -2100,7 +2486,9 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                 $accountrefid = 2;
             }
 
-            $description = $data['type'] . " - Invoice No : " . $invoiceProductDetails['salesBillDisplayNumber'];
+            $description = $invoiceProductDetails['combinedType'] . " - Invoice No : " . $invoiceProductDetails['salesBillDisplayNumber'];
+            $amount = $invoiceProductDetails['salesBillTotal'];
+            $billDate = !empty($data['date']) ? $data['date'] : date('Y-m-d');
 
             $sql = "INSERT INTO " . table_account_transaction . " (
                     " . account_transaction_date . ",
@@ -2137,10 +2525,10 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
             $query = self::$db->prepare($sql);
 
             $parameter = array(
-                ':' . account_transaction_date => !empty($data['date']) ? $data['date'] : date('Y-m-d'),
+                ':' . account_transaction_date => $billDate,
                 ':' . account_transaction_type => 1,
                 ':' . account_transaction_ref_id => $accountrefid,
-                ':' . account_transaction_amount => $data['amount'],
+                ':' . account_transaction_amount => $amount,
                 ':' . account_transaction_mode => $transactionmode,
                 ':' . account_transaction_created_by => 1,
                 ':' . account_transaction_update_by => 1,
@@ -2166,7 +2554,8 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
     public static function addSaveCustomerTransaction($data, $invoiceProductDetails) {
         $commit = 1;
         try {
-            $description = $data['type'] . " - Invoice No : " . $invoiceProductDetails['salesBillDisplayNumber'];
+            $description = $invoiceProductDetails['combinedType'] . " - Invoice No : " . $invoiceProductDetails['salesBillDisplayNumber'];
+            $amount = $invoiceProductDetails['salesBillTotal'];
 
             $sql = "INSERT INTO " . table_customer_transaction . " (
                     " . customer_transaction_customer_ref_id . ",
@@ -2209,7 +2598,7 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                 ':' . customer_transaction_bill_type => 3,
                 ':' . customer_transaction_type => 1,
                 ':' . customer_transaction_description => $description,
-                ':' . customer_transaction_amount => $data['amount'],
+                ':' . customer_transaction_amount => $amount,
                 ':' . customer_transaction_account_year_ref_id => self::$accountyearid,
                 ':' . customer_transaction_company_ref_id => self::$companyid,
                 ':' . customer_transaction_active_flag => 1,
@@ -2234,23 +2623,8 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
     public static function addSaveInvoiceBillItem($data, $invoiceProductDetails) {
         $commit = 1;
         try {
-            // Step 1 -> Product Details
-            $productId = $invoiceProductDetails['productId'];
-            $commodityRefId = $invoiceProductDetails['commodityRefId'];
-            $commodityHSNCodeRef = $invoiceProductDetails['commodityHSNCodeRef'];
-
-            // Step 2 -> GST Details
-            $cgstRate = floatval($invoiceProductDetails['cgstRate']);
-            $sgstRate = floatval($invoiceProductDetails['sgstRate']);
-            $igstRate = floatval($invoiceProductDetails['igstRate']);
-
-            // Step 3 -> Amount Calculation
-            $totalAmount = floatval($data['amount']);
-            $runningTotal = $invoiceProductDetails['runningTotal'];
-            $cgstTotal = $invoiceProductDetails['cgstTotal'];
-            $sgstTotal = $invoiceProductDetails['sgstTotal'];
-            $igstTotal = $invoiceProductDetails['igstTotal'];
-            $totalWithTax = $invoiceProductDetails['salesBillTotal'];
+            $billDate = !empty($data['date']) ? $data['date'] : date('Y-m-d');
+            $items = !empty($invoiceProductDetails['items']) ? $invoiceProductDetails['items'] : array();
 
             $sql = "INSERT INTO " . table_sales_bill_item . " (
                     " . salesbillitem_sales_bill_ref_id . ",
@@ -2273,14 +2647,15 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                     " . salesbillitem_sales_bill_type . ",
                     " . salesbillitem_commodity_ref_id . ",
                     " . salesbillitem_unitrate_wittax . ",
-                    " . salesbillitem_total_withtax . "
+                    " . salesbillitem_total_withtax . ",
+                    " . salesbillitem_description . "
                 ) VALUES (
                     :" . salesbillitem_sales_bill_ref_id . ",
                     :" . salesbillitem_item_ref_id . ",
                     :" . salesbillitem_sales_bill_date . ",
                     :" . salesbillitem_unit_rate . ",
                     0,
-                    1,
+                    :" . salesbillitem_quantity . ",
                     :" . salesbillitem_total . ",
                     :" . salesbillitem_cgst_rate . ",
                     :" . salesbillitem_cgst_total . ",
@@ -2295,34 +2670,39 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                     :" . salesbillitem_sales_bill_type . ",
                     :" . salesbillitem_commodity_ref_id . ",
                     :" . salesbillitem_unitrate_wittax . ",
-                    :" . salesbillitem_total_withtax . "
+                    :" . salesbillitem_total_withtax . ",
+                    :" . salesbillitem_description . "
                 )";
 
             $query = self::$db->prepare($sql);
 
-            $parameter = array(
-                ':' . salesbillitem_sales_bill_ref_id => self::$salesBillId,
-                ':' . salesbillitem_item_ref_id => $productId,
-                ':' . salesbillitem_sales_bill_date => !empty($data['date']) ? $data['date'] : date('Y-m-d'),
-                ':' . salesbillitem_unit_rate => $runningTotal,
-                ':' . salesbillitem_total => $runningTotal,
-                ':' . salesbillitem_cgst_rate => $cgstRate,
-                ':' . salesbillitem_cgst_total => $cgstTotal,
-                ':' . salesbillitem_sgst_rate => $sgstRate,
-                ':' . salesbillitem_sgst_total => $sgstTotal,
-                ':' . salesbillitem_igst_rate => $igstRate,
-                ':' . salesbillitem_igst_total => $igstTotal,
-                ':' . salesbillitem_hsn_code_ref_id => $commodityHSNCodeRef,
-                ':' . salesbillitem_sales_customer_ref_id => 0,
-                ':' . salesbillitem_company_ref_id => self::$companyid,
-                ':' . salesbillitem_account_year_ref_id => self::$accountyearid,
-                ':' . salesbillitem_sales_bill_type => 3,
-                ':' . salesbillitem_commodity_ref_id => $commodityRefId,
-                ':' . salesbillitem_unitrate_wittax => $totalAmount,
-                ':' . salesbillitem_total_withtax => $totalWithTax
-            );
+            foreach ($items as $item) {
+                $parameter = array(
+                    ':' . salesbillitem_sales_bill_ref_id => self::$salesBillId,
+                    ':' . salesbillitem_item_ref_id => $item['productId'],
+                    ':' . salesbillitem_sales_bill_date => $billDate,
+                    ':' . salesbillitem_unit_rate => $item['unitPrice'],
+                    ':' . salesbillitem_quantity => $item['quantity'],
+                    ':' . salesbillitem_total => $item['taxableValue'],
+                    ':' . salesbillitem_cgst_rate => $item['cgstRate'],
+                    ':' . salesbillitem_cgst_total => $item['cgstTotal'],
+                    ':' . salesbillitem_sgst_rate => $item['sgstRate'],
+                    ':' . salesbillitem_sgst_total => $item['sgstTotal'],
+                    ':' . salesbillitem_igst_rate => $item['igstRate'],
+                    ':' . salesbillitem_igst_total => $item['igstTotal'],
+                    ':' . salesbillitem_hsn_code_ref_id => $item['commodityHSNCodeRef'],
+                    ':' . salesbillitem_sales_customer_ref_id => 0,
+                    ':' . salesbillitem_company_ref_id => self::$companyid,
+                    ':' . salesbillitem_account_year_ref_id => self::$accountyearid,
+                    ':' . salesbillitem_sales_bill_type => 3,
+                    ':' . salesbillitem_commodity_ref_id => $item['commodityRefId'],
+                    ':' . salesbillitem_unitrate_wittax => $item['unitRateWithTax'],
+                    ':' . salesbillitem_total_withtax => $item['totalWithTax'],
+                    ':' . salesbillitem_description => $item['name']
+                );
 
-            $query->execute($parameter);
+                $query->execute($parameter);
+            }
         } catch (PDOException $ex) {
             $commit = 0;
             error_log("addSaveInvoiceBillItem PDOException: " . $ex->getMessage());
@@ -2331,165 +2711,6 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
             error_log("addSaveInvoiceBillItem Exception: " . $ex->getMessage());
         }
         return $commit;
-    }
-
-    public static function getInvoiceProductDetails($data) {
-        try {
-            if (empty($data['type'])) {
-                error_log("getInvoiceProductDetails: type parameter is missing or empty");
-                return 0;
-            }
-
-            // Step 1: Get Productid, Commodityid
-            $sql = "SELECT
-                    p." . items_item_id . " AS productId,
-                    p." . items_commodity_id . " AS commodityRefId
-                FROM " . table_items . " p
-                WHERE p." . items_name . " = :type
-                AND p." . items_active_flag . " = 1
-                LIMIT 1";
-            $query = self::$db->prepare($sql);
-            $parameter = array(
-                ':type' => $data['type']
-            );
-            $query->execute($parameter);
-            $product = $query->fetch(PDO::FETCH_OBJ);
-            if (!$product) {
-                error_log("getInvoiceProductDetails: Active product item not found for type '" . $data['type'] . "'");
-                return 0;
-            }
-            $productId = $product->productId;
-            $commodityRefId = $product->commodityRefId;
-
-            // Step 2 -> Get Commodity HSN Reference
-            $sql = "SELECT " . commodity_HSNcode_ref . " AS commodityHSNCodeRef
-                FROM " . table_commodity . "
-                WHERE " . commodity_id . " = :commodityRefId
-                LIMIT 1";
-            $query = self::$db->prepare($sql);
-            $parameter = array(
-                ':commodityRefId' => $commodityRefId
-            );
-            $query->execute($parameter);
-            $commodity = $query->fetch(PDO::FETCH_OBJ);
-            if (!$commodity) {
-                error_log("getInvoiceProductDetails: Commodity not found for commodityRefId " . $commodityRefId);
-                return 0;
-            }
-            $commodityHSNCodeRef = $commodity->commodityHSNCodeRef;
-
-            // Step 3 -> Get GST HSN Details
-            $sql = "SELECT
-                    " . gsthsncode_cgst_rate . " AS cgstRate,
-                    " . gsthsncode_sgst_rate . " AS sgstRate,
-                    " . gsthsncode_igst_rate . " AS igstRate
-                FROM " . table_gst_HSNCode . "
-                WHERE " . gsthsncode_hsn_code . " = :commodityHSNCodeRef
-                LIMIT 1";
-            $query = self::$db->prepare($sql);
-            $parameter = array(
-                ':commodityHSNCodeRef' => $commodityHSNCodeRef
-            );
-            $query->execute($parameter);
-            $gstHsn = $query->fetch(PDO::FETCH_OBJ);
-            if (!$gstHsn) {
-                error_log("getInvoiceProductDetails: GST HSN code not found for commodityHSNCodeRef '" . $commodityHSNCodeRef . "'");
-                return 0;
-            }
-            $cgstRate = floatval($gstHsn->cgstRate);
-            $sgstRate = floatval($gstHsn->sgstRate);
-            $igstRate = floatval($gstHsn->igstRate);
-
-            // Step 4 -> Get Sales Bill Prefix
-            $sql = "SELECT " . sales_prefix_value . " AS salesBillPrefixValue
-                FROM " . table_sales_bill_prefix . "
-                WHERE " . salesbillprefixvalue_type . " = :type
-                AND " . sales_prefix_company_id . " = :companyRefId
-                AND " . sales_prefix_account_id . " = :accountyearRefId
-                LIMIT 1";
-            $query = self::$db->prepare($sql);
-            $parameter = array(
-                ':type' => $data['type'],
-                ':companyRefId' => self::$companyid,
-                ':accountyearRefId' => self::$accountyearid
-            );
-            $query->execute($parameter);
-            $prefix = $query->fetch(PDO::FETCH_OBJ);
-            if (!$prefix) {
-                error_log("getInvoiceProductDetails: Sales bill prefix not found for type '" . $data['type'] . "', companyId " . self::$companyid . ", accountYearId " . self::$accountyearid);
-                return 0;
-            }
-            $salesBillPrefixValue = $prefix->salesBillPrefixValue;
-
-            // Step 5 -> Get Last Bill Number
-            $sql = "SELECT MAX(" . salesbill_sales_bill_number . ") AS billCount
-                FROM " . table_sales_bill . "
-                WHERE " . salesbill_type . " = :type
-                AND " . salesbill_company_ref_id . " = :companyRefId
-                AND " . salesbill_account_year_ref_id . " = :accountYearId";
-            $query = self::$db->prepare($sql);
-            $parameter = array(
-                ':type' => $data['type'],
-                ':companyRefId' => self::$companyid,
-                ':accountYearId' => self::$accountyearid
-            );
-            $query->execute($parameter);
-            $billCount = $query->fetch(PDO::FETCH_OBJ);
-            $lastBillNumber = ($billCount && $billCount->billCount) ? intval($billCount->billCount) : 0;
-            $salesBillNumber = $lastBillNumber + 1;
-
-            // Step 6 -> Create Bill Number
-            $salesBillDisplayNumber = $salesBillPrefixValue . $salesBillNumber;
-
-            // Step 7 -> Amount
-            $totalAmount = isset($data['amount']) ? floatval($data['amount']) : 0.0;
-
-            // Step 8 -> Calculate GST (Assuming amount is GST inclusive)
-            $totalGstRate = $cgstRate + $sgstRate + $igstRate;
-            if ($totalGstRate > 0) {
-                $runningTotal = $totalAmount / (1 + ($totalGstRate / 100));
-            } else {
-                $runningTotal = $totalAmount;
-            }
-
-            // Step 9 -> Calculate CGST / SGST / IGST
-            $cgstTotal = $runningTotal * ($cgstRate / 100);
-            $sgstTotal = $runningTotal * ($sgstRate / 100);
-            $igstTotal = $runningTotal * ($igstRate / 100);
-
-            // Step 10 -> Round Values
-            $runningTotal = round($runningTotal, 2);
-            $cgstTotal = round($cgstTotal, 2);
-            $sgstTotal = round($sgstTotal, 2);
-            $igstTotal = round($igstTotal, 2);
-
-            // Step 11 -> Final Total
-            $salesBillTotal = round($runningTotal + $cgstTotal + $sgstTotal + $igstTotal, 2);
-
-            return array(
-                'productId' => $productId,
-                'commodityRefId' => $commodityRefId,
-                'commodityHSNCodeRef' => $commodityHSNCodeRef,
-                'cgstRate' => $cgstRate,
-                'sgstRate' => $sgstRate,
-                'igstRate' => $igstRate,
-                'salesBillPrefixValue' => $salesBillPrefixValue,
-                'salesBillNumber' => $salesBillNumber,
-                'salesBillDisplayNumber' => $salesBillDisplayNumber,
-                'totalAmount' => $totalAmount,
-                'runningTotal' => $runningTotal,
-                'cgstTotal' => $cgstTotal,
-                'sgstTotal' => $sgstTotal,
-                'igstTotal' => $igstTotal,
-                'salesBillTotal' => $salesBillTotal,
-            );
-        } catch (PDOException $ex) {
-            error_log("getInvoiceProductDetails PDOException: " . $ex->getMessage());
-            return 0;
-        } catch (Exception $ex) {
-            error_log("getInvoiceProductDetails Exception: " . $ex->getMessage());
-            return 0;
-        }
     }
 
     public static function addSaveInvoiceBill($data, $invoiceProductDetails) {
@@ -2501,7 +2722,10 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
             $cgstTotal = $invoiceProductDetails['cgstTotal'];
             $sgstTotal = $invoiceProductDetails['sgstTotal'];
             $igstTotal = $invoiceProductDetails['igstTotal'];
+            $roundOff = isset($invoiceProductDetails['roundOff']) ? $invoiceProductDetails['roundOff'] : 0.00;
             $salesBillTotal = $invoiceProductDetails['salesBillTotal'];
+            $combinedType = $invoiceProductDetails['combinedType'];
+            $billDate = !empty($data['date']) ? $data['date'] : date('Y-m-d');
 
             $sql = "INSERT INTO " . table_sales_bill . " (
                         " . salesbill_sales_bill_number . ",
@@ -2542,7 +2766,7 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                         :" . salesbill_sgst_total . ",
                         :" . salesbill_igst_total . ",
                         :" . salesbill_running_total . ",
-                        0,
+                        :" . salesbill_round_off . ",
                         :" . salesbill_sales_bill_total . ",
                         :" . salesbill_company_ref_id . ",
                         :" . salesbill_account_year_ref_id . ",
@@ -2566,7 +2790,7 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                     )";
             $query = self::$db->prepare($sql);
             $parameter = array(
-                ':' . salesbill_sales_bill_date => !empty($data['date']) ? $data['date'] : date('Y-m-d'),
+                ':' . salesbill_sales_bill_date => $billDate,
                 ':' . salesbill_sales_bill_number => $salesBillNumber,
                 ':' . salesbill_sales_bill_display_number => $salesBillDisplayNumber,
                 ':' . salesbill_customer_id => self::$customerId,
@@ -2574,18 +2798,19 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                 ':' . salesbill_sgst_total => $sgstTotal,
                 ':' . salesbill_igst_total => $igstTotal,
                 ':' . salesbill_running_total => $runningTotal,
+                ':' . salesbill_round_off => $roundOff,
                 ':' . salesbill_sales_bill_total => $salesBillTotal,
                 ':' . salesbill_company_ref_id => self::$companyid,
                 ':' . salesbill_account_year_ref_id => self::$accountyearid,
                 ':' . salesbill_created_by => 1,
                 ':' . salesbill_sales_bill_type => 1,
                 ':' . salesbill_sales_bill_stage => 1,
-                ':' . salesbill_type => $data['type'],
+                ':' . salesbill_type => substr($combinedType, 0, 30),
                 ':' . salesbill_sales_bill_lock => 0
             );
 
             $query->execute($parameter);
-            self::$salesBillId = self::$db->lastInsertId();
+            self::$salesBillId = (int)self::$db->lastInsertId();
         } catch (PDOException $ex) {
             $commit = 0;
             error_log("addSaveInvoiceBill PDOException: " . $ex->getMessage());
@@ -2764,28 +2989,47 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
 
     public static function getOrCreateCustomer($data) {
         try {
-            if (empty($data['mobileNo'])) {
+            $mobileNo = !empty($data['mobileNo']) ? trim($data['mobileNo']) : (!empty($data['customer']['mobileNo']) ? trim($data['customer']['mobileNo']) : '');
+            if (empty($mobileNo)) {
                 error_log("getOrCreateCustomer: mobileNo is missing or empty");
                 return 0;
             }
 
+            $customerName = !empty($data['customerName']) ? trim($data['customerName']) : (!empty($data['customer']['customerName']) ? trim($data['customer']['customerName']) : '');
+
             // Step 1: Check existing customer using mobile number
-            $customerId = self::getCustomerByMobileNo($data['mobileNo']);
+            $customerId = self::getCustomerByMobileNo($mobileNo);
 
             // Customer already exists
             if ($customerId > 0) {
+                // If customerName provided is a proper name and existing name is just mobile or empty, update customer name
+                if (!empty($customerName) && !is_numeric($customerName)) {
+                    $sqlUpdate = "UPDATE " . table_customer . "
+                                  SET " . customer_name . " = :custName
+                                  WHERE " . customer_id . " = :custId
+                                  AND (" . customer_name . " = :mobileNo OR " . customer_name . " = '' OR " . customer_name . " IS NULL)";
+                    $qUpdate = self::$db->prepare($sqlUpdate);
+                    $qUpdate->execute(array(
+                        ':custName' => $customerName,
+                        ':custId' => $customerId,
+                        ':mobileNo' => $mobileNo
+                    ));
+                }
                 return $customerId;
             }
 
             // Step 2: Customer does not exist, create customer
-            $customerId = self::createCustomer($data);
+            $customerId = self::createCustomer(array(
+                'mobileNo' => $mobileNo,
+                'customerName' => !empty($customerName) ? $customerName : $mobileNo
+            ));
             if ($customerId == 0) {
-                error_log("getOrCreateCustomer: Failed to create customer for mobile " . $data['mobileNo']);
+                error_log("getOrCreateCustomer: Failed to create customer for mobile " . $mobileNo);
                 return 0;
             }
 
             // Step 3: Create customer address
-            $commit = self::createCustomerAddress($customerId, $data);
+            $commit = self::createCustomerAddress($customerId, array('mobileNo' => $mobileNo));
             if ($commit != 1) {
                 error_log("getOrCreateCustomer: Failed to create customer address for customerId " . $customerId);
                 return 0;
@@ -2808,20 +3052,36 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
         }
     }
 
-    public static function updateinvoicerawdatas($invoicerawdatalastinsertedid) {
+    public static function updateinvoicerawdatas($invoicerawdatalastinsertedid, $calculatedAmount = 0) {
         $commit = 1;
         try {
-            $sql = "UPDATE " . table_invoicerawdatas . "
-                SET " . invoicerawdata_status . " = :status,
-                    " . invoicerawdata_updatedtimestamp . " = NOW()
-                WHERE " . invoicerawdata_id . " = :id";
+            if ($calculatedAmount > 0) {
+                $sql = "UPDATE " . table_invoicerawdatas . "
+                    SET " . invoicerawdata_status . " = :status,
+                        " . invoicerawdata_amount . " = :amount,
+                        " . invoicerawdata_updatedtimestamp . " = NOW()
+                    WHERE " . invoicerawdata_id . " = :id";
 
-            $query = self::$db->prepare($sql);
+                $query = self::$db->prepare($sql);
 
-            $parameter = array(
-                ':status' => 'COMPLETED',
-                ':id' => $invoicerawdatalastinsertedid
-            );
+                $parameter = array(
+                    ':status' => 'COMPLETED',
+                    ':amount' => $calculatedAmount,
+                    ':id' => $invoicerawdatalastinsertedid
+                );
+            } else {
+                $sql = "UPDATE " . table_invoicerawdatas . "
+                    SET " . invoicerawdata_status . " = :status,
+                        " . invoicerawdata_updatedtimestamp . " = NOW()
+                    WHERE " . invoicerawdata_id . " = :id";
+
+                $query = self::$db->prepare($sql);
+
+                $parameter = array(
+                    ':status' => 'COMPLETED',
+                    ':id' => $invoicerawdatalastinsertedid
+                );
+            }
 
             $query->execute($parameter);
         } catch (PDOException $ex) {
@@ -2838,6 +3098,26 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
     public static function saveinvoicerawdatas($data) {
         $commit = 1;
         try {
+            $amount = 0;
+            if (isset($data['payment']) && is_array($data['payment']) && isset($data['payment']['amount'])) {
+                $amount = floatval($data['payment']['amount']);
+            } else if (isset($data['amount'])) {
+                $amount = floatval($data['amount']);
+            } else if (!empty($data['products']) && is_array($data['products'])) {
+                $computedAmount = 0.0;
+                foreach ($data['products'] as $p) {
+                    if (empty($p) || !is_array($p)) continue;
+                    $qty = isset($p['quantity']) ? floatval($p['quantity']) : 1;
+                    if ($qty <= 0) $qty = 1;
+                    $unitPrice = isset($p['unitPrice']) ? floatval($p['unitPrice']) : (isset($p['price']) ? floatval($p['price']) : 0.0);
+                    $gstPercentage = isset($p['gstPercentage']) ? floatval($p['gstPercentage']) : (isset($p['gstRate']) ? floatval($p['gstRate']) : 18.0);
+                    $lineTaxable = $unitPrice * $qty;
+                    $lineGst = $lineTaxable * ($gstPercentage / 100.0);
+                    $computedAmount += ($lineTaxable + $lineGst);
+                }
+                $amount = round($computedAmount);
+            }
+
             $compRefId = (self::$companyid > 0) ? self::$companyid : 0;
             $yearRefId = (self::$accountyearid > 0) ? self::$accountyearid : 0;
 
@@ -2865,7 +3145,7 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
 
             $parameter = array(
                 ':' . invoicerawdata_rawdata => json_encode($data),
-                ':' . invoicerawdata_amount => isset($data['amount']) ? $data['amount'] : 0,
+                ':' . invoicerawdata_amount => $amount,
                 ':' . invoicerawdata_status => 'PENDING',
                 ':' . invoicerawdata_cronreruncount => 0,
                 ':' . invoicerawdata_companyrefid => $compRefId,
@@ -2948,40 +3228,43 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                 throw new Exception($errorMessage);
             }
 
+            // Normalize payload to support both new nested and legacy flat structures
+            $normData = self::normalizeInvoiceData($data);
+
             // Resolve Company and Account Year
-            if (!empty($data['companyname'])) {
-                $companyId = (int)self::getCompanyId($data['companyname']);
+            if (!empty($normData['companyName'])) {
+                $companyId = (int)self::getCompanyId($normData['companyName']);
                 self::$companyid = $companyId;
             } else if (self::$companyid > 0) {
                 $companyId = self::$companyid;
             }
 
-            if (!empty($data['accountyear'])) {
-                $accountYearId = (int)self::getAccountYearId($data['accountyear']);
+            if (!empty($normData['accountYear'])) {
+                $accountYearId = (int)self::getAccountYearId($normData['accountYear']);
                 self::$accountyearid = $accountYearId;
             } else if (self::$accountyearid > 0) {
                 $accountYearId = self::$accountyearid;
             }
 
             // Check Company
-            if (empty($data['companyname']) && $companyId == 0) {
-                $errorMessage = "Company name (companyname) is required";
+            if (empty($normData['companyName']) && $companyId == 0) {
+                $errorMessage = "Company name (companyName) is required";
                 throw new Exception($errorMessage);
             }
 
             if ($companyId == 0) {
-                $errorMessage = "Company not found for name '" . (isset($data['companyname']) ? $data['companyname'] : '') . "'";
+                $errorMessage = "Company not found for name '" . $normData['companyName'] . "'";
                 throw new Exception($errorMessage);
             }
 
             // Check Account Year
-            if (empty($data['accountyear']) && $accountYearId == 0) {
-                $errorMessage = "Account year (accountyear) is required";
+            if (empty($normData['accountYear']) && $accountYearId == 0) {
+                $errorMessage = "Account year (accountYear) is required";
                 throw new Exception($errorMessage);
             }
 
             if ($accountYearId == 0) {
-                $errorMessage = "Account Year not found for '" . (isset($data['accountyear']) ? $data['accountyear'] : '') . "'";
+                $errorMessage = "Account Year not found for '" . $normData['accountYear'] . "'";
                 throw new Exception($errorMessage);
             }
 
@@ -2989,60 +3272,60 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
             self::$db->beginTransaction();
 
             // Step 1 -> Get or Create Customer
-            if (empty($data['mobileNo'])) {
-                $errorMessage = "Customer mobile number (mobileNo) is required";
+            if (empty($normData['mobileNo'])) {
+                $errorMessage = "Customer mobile number (customer.mobileNo) is required";
                 throw new Exception($errorMessage);
             }
 
-            $customerId = self::getOrCreateCustomer($data);
+            $customerId = self::getOrCreateCustomer($normData);
             self::$customerId = $customerId;
             if ($customerId == 0) {
-                $errorMessage = "Failed to get or create customer for mobile: " . $data['mobileNo'];
+                $errorMessage = "Failed to get or create customer for mobile: " . $normData['mobileNo'];
                 throw new Exception($errorMessage);
             }
 
             // Step 2 -> Get Helper Data for ProductDetails
-            if (empty($data['type'])) {
-                $errorMessage = "Invoice item/service type is required";
+            if (empty($normData['products'])) {
+                $errorMessage = "Invoice products list is required";
                 throw new Exception($errorMessage);
             }
 
-            $invoiceProductDetails = self::getInvoiceProductDetails($data);
+            $invoiceProductDetails = self::getInvoiceProductDetails($normData);
             if ($invoiceProductDetails == 0 || !is_array($invoiceProductDetails)) {
-                $errorMessage = "Failed to fetch product / GST / prefix details for type: " . $data['type'];
+                $errorMessage = "Failed to process products and GST details";
                 throw new Exception($errorMessage);
             }
 
             // Step 3 -> Add the Invoice entry
-            $commit = self::addSaveInvoiceBill($data, $invoiceProductDetails);
+            $commit = self::addSaveInvoiceBill($normData, $invoiceProductDetails);
             if ($commit == 0) {
                 $errorMessage = "Failed to insert sales bill";
                 throw new Exception($errorMessage);
             }
 
             // Step 4 -> Add the Invoice entry items
-            $commit = self::addSaveInvoiceBillItem($data, $invoiceProductDetails);
+            $commit = self::addSaveInvoiceBillItem($normData, $invoiceProductDetails);
             if ($commit == 0) {
                 $errorMessage = "Failed to insert sales bill item";
                 throw new Exception($errorMessage);
             }
 
             // Step 5 -> Save the Customer transaction
-            $commit = self::addSaveCustomerTransaction($data, $invoiceProductDetails);
+            $commit = self::addSaveCustomerTransaction($normData, $invoiceProductDetails);
             if ($commit == 0) {
                 $errorMessage = "Failed to insert customer transaction";
                 throw new Exception($errorMessage);
             }
 
             // Step 6 -> Save the Account transaction
-            $commit = self::addSaveAccountTransaction($data, $invoiceProductDetails);
+            $commit = self::addSaveAccountTransaction($normData, $invoiceProductDetails);
             if ($commit == 0) {
                 $errorMessage = "Failed to insert account transaction";
                 throw new Exception($errorMessage);
             }
 
             // Step 7 -> Save the Day transaction
-            $commit = self::addSaveDayTransaction($data, $invoiceProductDetails);
+            $commit = self::addSaveDayTransaction($normData, $invoiceProductDetails);
             if ($commit == 0) {
                 $errorMessage = "Failed to insert day transaction";
                 throw new Exception($errorMessage);
@@ -3050,7 +3333,7 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
 
             // Step 8 -> Update the Invoice Status to COMPLETED
             if ($invoiceRawDataId > 0) {
-                $commit = self::updateinvoicerawdatas($invoiceRawDataId);
+                $commit = self::updateinvoicerawdatas($invoiceRawDataId, $invoiceProductDetails['salesBillTotal']);
                 if ($commit == 0) {
                     $errorMessage = "Failed to update invoice raw data status to COMPLETED";
                     throw new Exception($errorMessage);
@@ -3070,7 +3353,9 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
                     "customerId" => $customerId,
                     "status" => "COMPLETED",
                     "salesBillNumber" => $invoiceProductDetails['salesBillNumber'],
-                    "salesBillDisplayNumber" => $invoiceProductDetails['salesBillDisplayNumber']
+                    "salesBillDisplayNumber" => $invoiceProductDetails['salesBillDisplayNumber'],
+                    "salesBillTotal" => $invoiceProductDetails['salesBillTotal'],
+                    "itemsCount" => count($invoiceProductDetails['items'])
                 )
             );
 
@@ -3138,13 +3423,15 @@ where c." . salesbill_sales_bill_id . "=" . $salesBillId;
         }
 
         // Resolve Company and Account Year for initial raw insertion
-        if (!empty($data['companyname'])) {
-            $companyId = (int)self::getCompanyId($data['companyname']);
+        $companyName = !empty($data['companyName']) ? $data['companyName'] : (!empty($data['companyname']) ? $data['companyname'] : '');
+        if (!empty($companyName)) {
+            $companyId = (int)self::getCompanyId($companyName);
             self::$companyid = $companyId;
         }
 
-        if (!empty($data['accountyear'])) {
-            $accountYearId = (int)self::getAccountYearId($data['accountyear']);
+        $accountYear = !empty($data['accountYear']) ? $data['accountYear'] : (!empty($data['accountyear']) ? $data['accountyear'] : '');
+        if (!empty($accountYear)) {
+            $accountYearId = (int)self::getAccountYearId($accountYear);
             self::$accountyearid = $accountYearId;
         }
 

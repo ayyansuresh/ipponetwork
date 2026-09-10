@@ -14,6 +14,128 @@ class generalhelper extends Controller {
         }
     }
     
+
+    public static function numberToWords($amount)
+{
+    $amount = round($amount, 2);
+
+    if ($amount == 0) {
+        return 'Zero';
+    }
+
+    $words = array();
+
+    $num2word = array(
+        0 => '',
+        1 => 'One',
+        2 => 'Two',
+        3 => 'Three',
+        4 => 'Four',
+        5 => 'Five',
+        6 => 'Six',
+        7 => 'Seven',
+        8 => 'Eight',
+        9 => 'Nine',
+        10 => 'Ten',
+        11 => 'Eleven',
+        12 => 'Twelve',
+        13 => 'Thirteen',
+        14 => 'Fourteen',
+        15 => 'Fifteen',
+        16 => 'Sixteen',
+        17 => 'Seventeen',
+        18 => 'Eighteen',
+        19 => 'Nineteen'
+    );
+
+    $tens2word = array(
+        2 => 'Twenty',
+        3 => 'Thirty',
+        4 => 'Forty',
+        5 => 'Fifty',
+        6 => 'Sixty',
+        7 => 'Seventy',
+        8 => 'Eighty',
+        9 => 'Ninety'
+    );
+
+    function convertLessThan1000($n)
+    {
+        global $num2word, $tens2word;
+
+        $str = '';
+
+        if ($n >= 100) {
+            $str .= $num2word[floor($n / 100)] . ' Hundred';
+            $n = $n % 100;
+        }
+
+        if ($n > 0) {
+
+            if ($str != '') {
+                $str .= ' and ';
+            }
+
+            if ($n <= 19) {
+                $str .= $num2word[$n];
+            } else {
+                $str .= $tens2word[floor($n / 10)];
+
+                if (($n % 10) > 0) {
+                    $str .= ' ' . $num2word[$n % 10];
+                }
+            }
+        }
+
+        return $str;
+    }
+
+    if ($amount >= 1000000000000) {
+        array_push(
+            $words,
+            convertLessThan1000(floor($amount / 1000000000000)) . ' Trillion'
+        );
+
+        $amount = $amount % 1000000000000;
+    }
+
+    if ($amount >= 1000000000) {
+        array_push(
+            $words,
+            convertLessThan1000(floor($amount / 1000000000)) . ' Billion'
+        );
+
+        $amount = $amount % 1000000000;
+    }
+
+    if ($amount >= 1000000) {
+        array_push(
+            $words,
+            convertLessThan1000(floor($amount / 1000000)) . ' Million'
+        );
+
+        $amount = $amount % 1000000;
+    }
+
+    if ($amount >= 1000) {
+        array_push(
+            $words,
+            convertLessThan1000(floor($amount / 1000)) . ' Thousand'
+        );
+
+        $amount = $amount % 1000;
+    }
+
+    if ($amount > 0) {
+        array_push(
+            $words,
+            convertLessThan1000($amount)
+        );
+    }
+
+    return implode(' ', $words);
+}
+
     
     //email sending
     

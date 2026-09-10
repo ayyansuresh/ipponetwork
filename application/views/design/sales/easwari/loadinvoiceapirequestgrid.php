@@ -27,8 +27,29 @@ $requests = salesInvoiceBlock::getInvoiceApiRequestsList($fromDate, $toDate, $st
             <?php if (!empty($requests)): ?>
                 <?php foreach ($requests as $req): 
                     $reqData = json_decode($req->rawdata, true);
-                    $mobileNo = isset($reqData['mobileNo']) ? $reqData['mobileNo'] : (isset($reqData['mobile']) ? $reqData['mobile'] : '-');
-                    $type = isset($reqData['type']) ? $reqData['type'] : '-';
+                    $mobileNo = '-';
+                    if (isset($reqData['customer']) && is_array($reqData['customer']) && !empty($reqData['customer']['mobileNo'])) {
+                        $mobileNo = $reqData['customer']['mobileNo'];
+                    } else if (isset($reqData['mobileNo'])) {
+                        $mobileNo = $reqData['mobileNo'];
+                    } else if (isset($reqData['mobile'])) {
+                        $mobileNo = $reqData['mobile'];
+                    }
+
+                    $type = '-';
+                    if (isset($reqData['products']) && is_array($reqData['products'])) {
+                        $typesArr = array();
+                        foreach ($reqData['products'] as $p) {
+                            if (isset($p['type']) && !empty($p['type'])) {
+                                $typesArr[] = $p['type'];
+                            }
+                        }
+                        if (!empty($typesArr)) {
+                            $type = implode(', ', array_unique($typesArr));
+                        }
+                    } else if (isset($reqData['type'])) {
+                        $type = $reqData['type'];
+                    }
                     $rawJsonEscaped = htmlspecialchars($req->rawdata, ENT_QUOTES, 'UTF-8');
                     
                     // Determine Status Display

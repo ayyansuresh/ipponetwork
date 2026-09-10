@@ -21,23 +21,9 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tax Invoice - <?php echo ($bill && !empty($bill->salesBillDisplayNumber)) ? htmlspecialchars($bill->salesBillDisplayNumber) : 'Green Trends'; ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!--<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">-->
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: #f4f6f8;
-            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: #1a1a1a;
-            padding: 20px 10px;
-            font-size: 12.5px;
-            line-height: 1.35;
-        }
-
+        
         /* Action Toolbar (Hidden in Print) */
         .no-print-toolbar {
             max-width: 440px;
@@ -446,20 +432,22 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
     </div>
 <?php else: 
     // Prepare Data
-    $companyName = !empty($bill->company_name) ? $bill->company_name : 'PRABHU & MOHIT ENTERPRISES';
+    $companyName = !empty($bill->company_name) ? $bill->company_name : '-----------------';
     $companyAddress1 = !empty($bill->company_address1) ? $bill->company_address1 : 'NO.121-8-4, LAKSHMI TOWER, KATCHERI ROAD,';
-    $companyAddress2 = !empty($bill->company_address2) ? $bill->company_address2 : 'OPP. TO K.V.S. SCHOOL, VIRUDHUNAGAR,';
-    $companyCityState = (!empty($bill->company_city) ? $bill->company_city : 'VIRUDHUNAGAR') . ', ' . (!empty($bill->company_state) ? $bill->company_state : 'TAMIL NADU') . (!empty($bill->company_pincode) ? ' – ' . $bill->company_pincode : ' – 626001');
+    $companyAddress2 = !empty($bill->company_address2) ? $bill->company_address2 : 'OPP. TO K.V.S. SCHOOL,';
+    $companyCity = !empty($bill->company_city) ? $bill->company_city : 'VIRUDHUNAGAR';
+    $companyState = !empty($bill->company_state) ? $bill->company_state : 'TAMIL NADU';
+    $companyPincode = !empty($bill->company_pincode) ? $bill->company_pincode : '626001';
     $companyPhone = !empty($bill->company_mobile) ? $bill->company_mobile : (!empty($bill->company_phone) ? $bill->company_phone : '8667666818');
     $companyGst = !empty($bill->company_gst) ? $bill->company_gst : '33BDOPP10372Z7';
-    $companyEmail = !empty($bill->company_email) ? $bill->company_email : 'ceo@cktrends.in';
+    $companyEmail = !empty($bill->company_email) ? $bill->company_email : 'support@ipponetwork.in';
 
     $customerName = !empty($bill->customer_name) ? $bill->customer_name : (!empty($bill->village_customer_name) ? $bill->village_customer_name : '-');
     $customerPhone = !empty($bill->customer_mobile) ? $bill->customer_mobile : '-';
     
     // Format Bill Date & Time
     $billTimestamp = !empty($bill->salesBillDate) ? $bill->salesBillDate : (!empty($bill->createdTimeStamp) ? $bill->createdTimeStamp : date('Y-m-d H:i:s'));
-    $formattedBillDate = date('d/m/Y, h:i A', strtotime($billTimestamp));
+    $formattedBillDate = date('d/m/Y', strtotime($billTimestamp));
     $billNumber = !empty($bill->salesBillDisplayNumber) ? $bill->salesBillDisplayNumber : (!empty($bill->salesBillNumber) ? $bill->salesBillNumber : $salesbillid);
 
     // Financial Values
@@ -502,7 +490,7 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
 ?>
 
     <!-- Top Action Toolbar -->
-    <div class="no-print-toolbar">
+    <!-- <div class="no-print-toolbar">
         <a href="<?php echo URL; ?>sales-salesmalleswara/invoiceapirequest" class="btn-toolbar btn-back">
             &larr; Back
         </a>
@@ -512,17 +500,18 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
             </svg>
             Print Invoice
         </button>
-    </div>
+    </div> -->
 
     <!-- Main Printable Tax Invoice Card -->
     <div class="invoice-card">
         
         <!-- Header Logo -->
-        <div class="brand-header">
+        <div class="brand-header" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;">
+            <img src="<?php echo URL; ?>assets/img/ipponetwork.svg" alt="IppoNetwork Logo" style="height: 30px; width: auto; max-width: 50px; object-fit: contain;">
             <div class="brand-title">
-                <span class="brand-green">green</span><span class="brand-trends">trends</span>
+                <span class="brand-green">Ippo</span><span class="brand-trends">Network</span>
             </div>
-            <div class="brand-subtitle">UNISEX HAIR & STYLE SALON</div>
+            <!-- <div class="brand-subtitle">UNISEX HAIR & STYLE SALON</div> -->
         </div>
 
         <!-- Tax Invoice Title -->
@@ -533,16 +522,20 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
             <span>Tax Invoice</span>
         </div>
 
+        <br/>
         <!-- Franchisee Tag -->
-        <div class="franchisee-label">FRANCHISEE</div>
+        <!-- <div class="franchisee-label">FRANCHISEE</div> -->
 
         <!-- Franchisee / Company Address -->
         <div class="company-address-block">
-            <div><?php echo htmlspecialchars($companyName); ?> <?php echo htmlspecialchars($companyAddress1); ?></div>
-            <div><?php echo htmlspecialchars($companyAddress2); ?> <?php echo htmlspecialchars($companyCityState); ?></div>
-            <div>PH:- <?php echo htmlspecialchars($companyPhone); ?></div>
-            <div>GST NO: <?php echo htmlspecialchars($companyGst); ?></div>
-            <div style="font-weight: 800; margin-top: 3px;">GREEN TRENDS</div>
+            <div> <?php echo htmlspecialchars($companyAddress1). ","; ?></div>
+            <div><?php echo htmlspecialchars($companyAddress2). ","; ?></div>
+            <div> <?php echo htmlspecialchars($companyCity). " - "; ?> <?php echo htmlspecialchars($companyPincode) . ", "; ?> <?php echo htmlspecialchars($companyState)."."; ?></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px;">
+                <div style="text-align: left;">PH:- <?php echo htmlspecialchars($companyPhone); ?></div>
+                <div style="text-align: right;">GST NO: <?php echo htmlspecialchars($companyGst); ?></div>
+            </div>
+            <!-- <div style="font-weight: 800; margin-top: 3px;">GREEN TRENDS</div> -->
         </div>
 
         <hr class="dotted-divider">
@@ -597,9 +590,9 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
                         
                         // Append SAC/HSN Code if not already included
                         $itemParticulars = $itemName;
-                        if (!empty($hsnCode) && stripos($itemParticulars, 'SAC CODE') === false && stripos($itemParticulars, 'HSN') === false) {
-                            $itemParticulars .= ' - SAC CODE - ' . $hsnCode;
-                        }
+                        // if (!empty($hsnCode) && stripos($itemParticulars, 'SAC CODE') === false && stripos($itemParticulars, 'HSN') === false) {
+                        //     $itemParticulars .= ' - SAC CODE - ' . $hsnCode;
+                        // }
 
                         $qty = (float)$item->Quantity;
                         $rate = (float)$item->unitrate;
@@ -632,14 +625,14 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
                 <td class="summary-label bold">BASIC SALES</td>
                 <td class="summary-amount bold">&#8377;<?php echo number_format($basicSales, 2); ?></td>
             </tr>
-            <tr>
+            <!-- <tr>
                 <td class="summary-label">MEM.DISCOUNT</td>
                 <td class="summary-amount">&#8377;<?php echo number_format($memDiscount, 2); ?></td>
             </tr>
             <tr>
                 <td class="summary-label">OTHER DISCOUNT</td>
                 <td class="summary-amount">&#8377;<?php echo number_format($otherDiscount, 2); ?></td>
-            </tr>
+            </tr> -->
             <tr>
                 <td class="summary-label bold">NET AMOUNT</td>
                 <td class="summary-amount bold">&#8377;<?php echo number_format($netAmount, 2); ?></td>
@@ -654,7 +647,7 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
             </tr>
             <tr>
                 <td class="summary-label">ROUND OFF</td>
-                <td class="summary-amount">&#8377;<?php echo number_format($roundOff, 2); ?></td>
+                <td class="summary-amount"><?php echo ($roundOff < 0 ? '-' : '') . '&#8377;' . number_format(abs($roundOff), 2); ?></td>
             </tr>
         </table>
 
@@ -665,18 +658,29 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
                 <td class="summary-label bold grand-bill-amount">BILL AMOUNT</td>
                 <td class="summary-amount bold grand-bill-amount">&#8377;<?php echo number_format($billAmount, 2); ?></td>
             </tr>
-            <tr>
+<!--            <tr>
                 <td class="summary-label">TENDER AMOUNT</td>
                 <td class="summary-amount">&#8377;<?php echo number_format($tenderAmount, 2); ?></td>
             </tr>
             <tr>
                 <td class="summary-label">CHANGE AMOUNT</td>
                 <td class="summary-amount">&#8377;<?php echo number_format($changeAmount, 2); ?></td>
-            </tr>
+            </tr>-->
         </table>
+        
+        <hr class="dotted-divider">
+
+       
+        <!-- In Words / Footer Greeting -->
+        <div class="in-words-section" style="text-align: center; margin: 10px 0 6px 0;">
+             <p class="words-label" style="text-align: center; font-weight: 700; font-size: 11.5px; color: #222; margin: 0; letter-spacing: 0.5px;">** THANK YOU, VISIT AGAIN **</p>
+        </div>
+        <div style="text-align: center; font-weight: 700; font-size: 12px; margin-top: 5px; color: #111;">** நல்லதே நடக்கும் **</div>
+           
+
 
         <!-- Bottom GST Table -->
-        <table class="gst-table">
+<!--        <table class="gst-table">
             <thead>
                 <tr>
                     <th>GST</th>
@@ -695,7 +699,7 @@ $items = ($invoiceData && isset($invoiceData['items'])) ? $invoiceData['items'] 
                     <td><?php echo number_format($sgstRateAvg, 2); ?>%</td>
                 </tr>
             </tbody>
-        </table>
+        </table>-->
 
     </div>
 
