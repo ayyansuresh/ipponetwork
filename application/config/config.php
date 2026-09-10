@@ -131,3 +131,7 @@ date_default_timezone_set('Asia/Kolkata');
 
 define('UPLOAD_DIR', 'assets/img/bills/');
 define('UPLOAD_ROW_DIR', 'assets/img/');
+
+// JWT Secret Key configuration for API authentication
+define('JWT_SECRET_KEY', '9659505284ipponetwork');
+

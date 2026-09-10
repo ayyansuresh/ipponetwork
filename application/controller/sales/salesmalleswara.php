@@ -15,10 +15,11 @@ class salesmalleswara extends Controller {
     }
     
     public function makesalesentry() {
-         self::loadBlock('customer/customerBlock');
+        self::loadBlock('customer/customerBlock');
         self::loadBlock('item/itemBlock');
         self::loadBlock('account/accountBlock');
         self::loadBlockSales('sales/' . client_folder . '/salesInvoiceBlock');
+        self::loadHelper('jwthelper');
         self::loadDesign('sales/' . client_folder . '/makesalesentry');
     }
     
